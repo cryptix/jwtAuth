@@ -1,6 +1,8 @@
 package jwtAuth
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
