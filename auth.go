@@ -13,6 +13,8 @@ import (
 var (
 	ErrNoToken      = errors.New("Token was not supplied")
 	ErrInvalidToken = errors.New("Invalid Token - Access Denied.")
+
+	ErrVerifyFuncNotSet = errors.New("You did not set VerifyFunc.")
 )
 
 type ErrValidation struct {
@@ -30,7 +32,9 @@ var (
 // you need to overwrite this to supply your key.
 // you can make also make custom checks on the claim.
 // claim[exp] is verified internaly by the jwt-go package
-var VerifyFunc jwt.Keyfunc
+var VerifyFunc = func(tok *jwt.Token) ([]byte, error) {
+	return nil, ErrVerifyFuncNotSet
+}
 
 // VerifyHeader checks for the exsistence of a Token in the Request Header
 // it Verifies the Token using the user supplied VerifyFunc

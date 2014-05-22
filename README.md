@@ -12,8 +12,9 @@ Currently only `RS256` is supported. If you have need/ideas for key schemes to u
 * `MakeToken` for creating signed tokens
 * `VerifyHeader` to check if a key is valid
 
-## Planed
+## TODO
 * Make simple Handler to resign a token (extend its valdity)
+* Tests MakeToken
 
 
 ## How to get Keys
