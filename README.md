@@ -1,4 +1,6 @@
-# jwtAuth
+=======
+jwtAuth
+=======
 
 Some simple Handlers and Helpers to use [jwt-go](https://github.com/dgrijalva/jwt-go) for go http stuff.
 
