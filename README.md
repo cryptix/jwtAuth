@@ -1,6 +1,7 @@
-=======
 jwtAuth
 =======
+[![GoDoc](https://godoc.org/github.com/cryptix/jwtAuth?status.svg)](https://godoc.org/github.com/cryptix/jwtAuth)
+[![Build Status](https://travis-ci.org/cryptix/jwtAuth.png?branch=master)](https://travis-ci.org/cryptix/jwtAuth)
 
 Some simple Handlers and Helpers to use [jwt-go](https://github.com/dgrijalva/jwt-go) for go http stuff.
 

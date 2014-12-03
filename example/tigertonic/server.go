@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/codegangsta/cli"
+	"github.com/cryptix/go/logging"
 	"github.com/cryptix/jwtAuth"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/rcrowley/go-metrics"
@@ -21,21 +23,15 @@ var (
 	mux       *tigertonic.TrieServeMux
 )
 
-func main() {
+func serveCmd(ctx *cli.Context) {
 
 	goodSauce = true
 
 	verifyKeyBytes, err := ioutil.ReadFile("key.pub")
-	if err != nil {
-		log.Fatal("Error reading private key")
-		return
-	}
+	logging.CheckFatal(err)
 
 	verifyKey, err := jwt.ParseRSAPublicKeyFromPEM(verifyKeyBytes)
-	if err != nil {
-		log.Fatal("Error reading private key")
-		return
-	}
+	logging.CheckFatal(err)
 
 	jwtAuth.VerifyFunc = func(t *jwt.Token) (interface{}, error) {
 		return verifyKey, nil
@@ -65,10 +61,7 @@ func main() {
 	)
 
 	err = server.ListenAndServe()
-	if nil != err {
-		log.Println(err)
-	}
-
+	logging.CheckFatal(err)
 }
 
 // POST /toggleSauce
