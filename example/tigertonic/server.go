@@ -2,7 +2,6 @@ package main
 
 import (
 	crRand "crypto/rand"
-	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -12,7 +11,7 @@ import (
 	"os"
 
 	"github.com/cryptix/jwtAuth"
-
+	"github.com/dgrijalva/jwt-go"
 	"github.com/rcrowley/go-metrics"
 	"github.com/rcrowley/go-tigertonic"
 )
@@ -20,21 +19,25 @@ import (
 var (
 	goodSauce bool
 	mux       *tigertonic.TrieServeMux
-	verifyKey []byte
 )
 
 func main() {
 
 	goodSauce = true
 
-	var err error
-	verifyKey, err = ioutil.ReadFile("key.pub")
+	verifyKeyBytes, err := ioutil.ReadFile("key.pub")
 	if err != nil {
 		log.Fatal("Error reading private key")
 		return
 	}
 
-	jwtAuth.VerifyFunc = func(t *jwt.Token) ([]byte, error) {
+	verifyKey, err := jwt.ParseRSAPublicKeyFromPEM(verifyKeyBytes)
+	if err != nil {
+		log.Fatal("Error reading private key")
+		return
+	}
+
+	jwtAuth.VerifyFunc = func(t *jwt.Token) (interface{}, error) {
 		return verifyKey, nil
 	}
 

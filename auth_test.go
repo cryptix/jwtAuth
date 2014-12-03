@@ -1,56 +1,60 @@
 package jwtAuth
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"net/http"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestVerifyHeader(t *testing.T) {
-	Convey("No Token returns an error", t, func() {
-		req, _ := http.NewRequest("GET", "/", nil)
+func TestVerifyNoToken(t *testing.T) {
+	a := assert.New(t)
+	req, err := http.NewRequest("GET", "/", nil)
+	a.Nil(err)
 
-		header, err := VerifyHeader(req)
-		So(header, ShouldBeNil)
-		So(err, ShouldEqual, ErrNoToken)
-	})
+	_, err = VerifyHeader(req)
+	a.Equal(jwt.ErrNoTokenInRequest, err)
+}
 
-	Convey("Invalid Token returns an error", t, func() {
-		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(HeaderKey, "abc")
+func TestVerifyInvalidToken(t *testing.T) {
+	a := assert.New(t)
+	req, err := http.NewRequest("GET", "/", nil)
+	a.Nil(err)
+	req.Header.Set(HeaderKey, "Bearer abc")
 
-		header, err := VerifyHeader(req)
-		So(header, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "Validation Error: Token contains an invalid number of segments")
-	})
+	_, err = VerifyHeader(req)
+	a.EqualError(err, "token contains an invalid number of segments")
+}
 
-	Convey("VerifyFunc needs to be set", t, func() {
-		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(HeaderKey, "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg")
+func TestVerifyFuncNotSet(t *testing.T) {
+	a := assert.New(t)
+	req, err := http.NewRequest("GET", "/", nil)
+	a.Nil(err)
+	req.Header.Set(HeaderKey, "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg")
 
-		header, err := VerifyHeader(req)
-		So(header, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "Validation Error: "+ErrVerifyFuncNotSet.Error())
-	})
+	_, err = VerifyHeader(req)
+	a.EqualError(err, ErrVerifyFuncNotSet.Error())
+}
 
-	Convey("Valid Token returns no error", t, func() {
-		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(HeaderKey, "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZXN0IjoiaGkifQ.x3m_ha9OONqv25ER7Fazl7Inywq7Vv3977KqHTr3qwJe02_KSOKCDEcA2Lexevy0IcJTpoKMtzSWAWeR12veQbe8GIcFBIvwWoxKGuXHeIZYPZiKFhmQehOK6FmBRc1cjvQjct-BfcTTYp7x3Mlw-k99uHL93JKR6CNraZUN_oM")
+func TestVerifyValidToken(t *testing.T) {
 
-		VerifyFunc = func(tok *jwt.Token) ([]byte, error) {
-			verifyKey, err := ioutil.ReadFile("key.pub")
-			if err != nil {
-				t.Fatal(err)
-			}
+	a := assert.New(t)
+	req, err := http.NewRequest("GET", "/", nil)
+	a.Nil(err)
+	req.Header.Set(HeaderKey, "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.e30.wjRzalnqwKCB4zrZ8K8s7vUZ06SCG55AWHJFMt-qTlMNAx36SNOEwhtkXKQRDzzrPj7ddI_qFXbBzr98oKo1MagoJHRv1oBwRjGZZs5O3z816LYFvMwIA0N0VOf94d34Hd8LcUoUZ_6Alpys5s3yzTdN6o4cLWKMx44QxlyQvLY")
 
-			return verifyKey, nil
-		}
+	VerifyFunc = func(tok *jwt.Token) (interface{}, error) {
+		keyBytes, err := ioutil.ReadFile("key.pub")
+		a.Nil(err, "Error:  %q", err)
 
-		header, err := VerifyHeader(req)
-		So(header, ShouldBeNil)
-		So(err, ShouldBeNil)
-	})
+		key, err := jwt.ParseRSAPublicKeyFromPEM(keyBytes)
+		a.Nil(err, "Error:  %q", err)
+
+		return key, nil
+	}
+
+	_, err = VerifyHeader(req)
+	a.Nil(err, "Error:  %q", err)
 }

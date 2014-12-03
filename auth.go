@@ -2,37 +2,23 @@ package jwtAuth
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-// Errors
 var (
-	ErrNoToken      = errors.New("Token was not supplied")
-	ErrInvalidToken = errors.New("Invalid Token - Access Denied.")
-
-	ErrVerifyFuncNotSet = errors.New("You did not set VerifyFunc.")
+	ErrInvalidToken     = errors.New("jwtAuth: Invalid Token")
+	ErrVerifyFuncNotSet = errors.New("jwtAuth: You did not set VerifyFunc.")
 )
 
-type ErrValidation struct {
-	ValidateError *jwt.ValidationError
-}
-
-func (e ErrValidation) Error() string {
-	return fmt.Sprintf("Validation Error: %s", e.ValidateError.Error())
-}
-
-var (
-	HeaderKey string = "AuthToken" // Default Header name
-)
+var HeaderKey = "Authorization" // Default Header name
 
 // you need to overwrite this to supply your key.
 // you can make also make custom checks on the claim.
 // claim[exp] is verified internaly by the jwt-go package
-var VerifyFunc = func(tok *jwt.Token) ([]byte, error) {
+var VerifyFunc = func(tok *jwt.Token) (interface{}, error) {
 	return nil, ErrVerifyFuncNotSet
 }
 
@@ -40,34 +26,21 @@ var VerifyFunc = func(tok *jwt.Token) ([]byte, error) {
 // it Verifies the Token using the user supplied VerifyFunc
 // func signature is chosen to work with go-tigertonic.If()
 func VerifyHeader(r *http.Request) (http.Header, error) {
-	tokString := r.Header.Get(HeaderKey)
-	if tokString == "" {
-		return nil, ErrNoToken
-	}
-
-	token, err := jwt.Parse(tokString, VerifyFunc)
-
-	switch err.(type) {
-
-	case nil: // no error
-		if !token.Valid { // may still be invalid
-			return nil, ErrInvalidToken
-		}
-
-		return nil, nil
-
-	case *jwt.ValidationError: // something was wrong during the validation
-		return nil, ErrValidation{err.(*jwt.ValidationError)}
-
-	default: // something else went wrong
+	token, err := jwt.ParseFromRequest(r, VerifyFunc)
+	if err != nil {
 		return nil, err
 	}
 
+	if !token.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	return nil, nil
 }
 
 // MakeToken creates a new RS256 signed token.
 // it sets the claims map and usses validDur to sepcify when it is expireing from time.Now()
-func MakeToken(signKey []byte, claims map[string]interface{}, validDur time.Duration) (string, error) {
+func MakeToken(signKey interface{}, claims map[string]interface{}, validDur time.Duration) (string, error) {
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
 
 	for key, value := range claims {
@@ -82,5 +55,5 @@ func MakeToken(signKey []byte, claims map[string]interface{}, validDur time.Dura
 		return "", err
 	}
 
-	return tokenString, nil
+	return "Bearer " + tokenString, nil
 }

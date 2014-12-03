@@ -1,8 +1,8 @@
 package main
 
 import (
+	"crypto/rsa"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/codegangsta/negroni"
 	"github.com/cryptix/jwtAuth"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
 
@@ -25,22 +26,34 @@ const (
 // but maybe it's a better idea, just to store the public key in ram?
 // and load the signKey on every signing request? depends on  your usage i guess
 var (
-	verifyKey, signKey []byte
+	signKey   *rsa.PrivateKey
+	verifyKey *rsa.PublicKey
 )
 
 // read the key files before starting http handlers
 func init() {
 	var err error
-
-	signKey, err = ioutil.ReadFile(privKeyPath)
+	signKeyBytes, err := ioutil.ReadFile(privKeyPath)
 	if err != nil {
-		log.Fatal("Error reading private key")
+		log.Fatal(err)
 		return
 	}
 
-	verifyKey, err = ioutil.ReadFile(pubKeyPath)
+	signKey, err = jwt.ParseRSAPrivateKeyFromPEM(signKeyBytes)
 	if err != nil {
-		log.Fatal("Error reading private key")
+		log.Fatal(err)
+		return
+	}
+
+	verifyKeyBytes, err := ioutil.ReadFile(pubKeyPath)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	verifyKey, err = jwt.ParseRSAPublicKeyFromPEM(verifyKeyBytes)
+	if err != nil {
+		log.Fatal(err)
 		return
 	}
 }
@@ -52,7 +65,7 @@ type User struct {
 
 var users map[int]User
 
-func myVerify(t *jwt.Token) ([]byte, error) {
+func myVerify(t *jwt.Token) (interface{}, error) {
 	return verifyKey, nil
 }
 
